@@ -26,6 +26,7 @@ import java.util.Map;
 import net.pms.PMS;
 import net.pms.configuration.UmsConfiguration;
 import net.pms.database.MediaTableVideoMetadataLocalized;
+import net.pms.database.VideoMetadataRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -567,9 +568,13 @@ public class MediaVideoMetadata {
 		if (lang != null && !"en-us".equals(lang) && !hasTranslation(lang) && fileId != null && fileId > -1) {
 			VideoMetadataLocalized loc;
 			if (isTvEpisode) {
-				loc = MediaTableVideoMetadataLocalized.getVideoMetadataLocalized(fileId, false, lang, imdbID, "tv_episode", tmdbTvId, tvSeason, tvEpisodeNumber);
+				// Create a VideoMetadataRequest class to make a request with specified values
+				VideoMetadataRequest request = new VideoMetadataRequest(fileId, false, lang, imdbID, "tv_episode", tmdbTvId, tvSeason, tvEpisodeNumber);
+				loc = MediaTableVideoMetadataLocalized.getVideoMetadataLocalized(request);
 			} else {
-				loc = MediaTableVideoMetadataLocalized.getVideoMetadataLocalized(fileId, false, lang, imdbID, "movie", tmdbId, null, null);
+				// Create a VideoMetadataRequest class to make a request with specified values
+				VideoMetadataRequest request = new VideoMetadataRequest(fileId, false, lang, imdbID, "movie", tmdbId, null, null);
+				loc = MediaTableVideoMetadataLocalized.getVideoMetadataLocalized(request);
 			}
 			if (loc != null) {
 				addTranslation(lang, loc);

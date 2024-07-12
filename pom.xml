@@ -54,7 +54,8 @@
 	<properties>
 		<!-- NSIS needs a version without "-SNAPSHOT" or "-b1" -->
 		<project.version.short>14.2.0</project.version.short>
-		<project.jre-version>17</project.jre-version>
+		<!-- <project.jre-version>17</project.jre-version> -->
+		<project.jdk-version>17</project.jdk-version>
 		<jgoodies-forms-version>1.9.0</jgoodies-forms-version>
 
 		<!-- Version 2.7.0 is the last free version. The latest libraries are shipped only with the commercial JGoodies Smart Client -->
@@ -122,7 +123,7 @@
 
 		<junit5.version>5.10.3</junit5.version>
 		<jetty.version>12.0.10</jetty.version>
-		<maven.compiler.release>${project.jre-version}</maven.compiler.release>
+		<maven.compiler.release>${project.jdk-version}</maven.compiler.release>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -910,9 +911,9 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.13.0</version>
 				<configuration>
-					<release>${project.jre-version}</release>
-					<testSource>${project.jre-version}</testSource>
-					<testTarget>${project.jre-version}</testTarget>
+					<release>${project.jdk-version}</release>
+					<testSource>${project.jdk-version}</testSource>
+					<testTarget>${project.jdk-version}</testTarget>
 					<compilerArgument>${compilerArgument}</compilerArgument>
 				</configuration>
 			</plugin>
@@ -1052,9 +1053,9 @@
 										<mkdir dir="${project.binaries}/windows/fonts/conf.avail" />
 										<mkdir dir="${project.binaries}/windows/fonts/conf.d" />
 										<mkdir dir="${project.binaries}/windows/x86" />
-										<mkdir dir="${project.binaries}/windows/x86/jre${project.jre-version}" />
+										<mkdir dir="${project.binaries}/windows/x86/jdk${project.jdk-version}" />
 										<mkdir dir="${project.binaries}/windows/x86_64" />
-										<mkdir dir="${project.binaries}/windows/x86_64/jre${project.jre-version}" />
+										<mkdir dir="${project.binaries}/windows/x86_64/jdk${project.jdk-version}" />
 										<mkdir dir="${project.binaries}/windows/mplayer" />
 
 										<!-- Download all necessary Windows binaries. Keep the same structure because NSIS expects it that way. -->
@@ -1104,12 +1105,12 @@
 										<get src="${project.binaries-base}/win32/interframe/InterFrame2.avsi?p=${binary-revision}" dest="${project.binaries}/windows/avisynth/InterFrame2.avsi" usetimestamp="true" />
 										<get src="${project.binaries-base}/win32/interframe/svpflow1.dll?p=${binary-revision}" dest="${project.binaries}/windows/avisynth/svpflow1.dll" usetimestamp="true" />
 										<get src="${project.binaries-base}/win32/interframe/svpflow2.dll?p=${binary-revision}" dest="${project.binaries}/windows/avisynth/svpflow2.dll" usetimestamp="true" />
-										<get src="${project.binaries-base}/win32/jre${project.jre-version}-x64.zip?p=${binary-revision}" dest="${project.basedir}/target/jre${project.jre-version}-x64.zip" usetimestamp="true" />
-										<unzip src="${project.basedir}/target/jre${project.jre-version}-x64.zip" dest="${project.binaries}/windows/x86_64/jre${project.jre-version}">
+										<get src="${project.binaries-base}/win32/jdk${project.jdk-version}-x64.zip?p=${binary-revision}" dest="${project.basedir}/target/jre${project.jre-version}-x64.zip" usetimestamp="true" />
+										<unzip src="${project.basedir}/target/jdk${project.jdk-version}-x64.zip" dest="${project.binaries}/windows/x86_64/jre${project.jre-version}">
 											<cutdirsmapper dirs="1" />
 										</unzip>
-										<get src="${project.binaries-base}/win32/jre${project.jre-version}-x86.zip?p=${binary-revision}" dest="${project.basedir}/target/jre${project.jre-version}-x86.zip" usetimestamp="true" />
-										<unzip src="${project.basedir}/target/jre${project.jre-version}-x86.zip" dest="${project.binaries}/windows/x86/jre${project.jre-version}">
+										<get src="${project.binaries-base}/win32/jdk${project.jdk-version}-x86.zip?p=${binary-revision}" dest="${project.basedir}/target/jre${project.jre-version}-x86.zip" usetimestamp="true" />
+										<unzip src="${project.basedir}/target/jdk${project.jdk-version}-x86.zip" dest="${project.binaries}/windows/x86/jre${project.jre-version}">
 											<cutdirsmapper dirs="1" />
 										</unzip>
 										<get src="${project.binaries-base}/win32/mplayer/config?p=${binary-revision}" dest="${project.binaries}/windows/mplayer/config" usetimestamp="true" />
@@ -1291,7 +1292,7 @@
 								<PROJECT_NAME_SHORT>${project.name.short}</PROJECT_NAME_SHORT>
 								<PROJECT_VERSION_SHORT>${project.version.short}</PROJECT_VERSION_SHORT>
 								<PROJECT_BINARIES>${project.binaries}</PROJECT_BINARIES>
-								<PROJECT_JRE_VERSION>${project.jre-version}</PROJECT_JRE_VERSION>
+								<PROJECT_JRE_VERSION>${project.jdk-version}</PROJECT_JRE_VERSION>
 								<PROJECT_BINARY_REVISION>${binary-revision}</PROJECT_BINARY_REVISION>
 								<PROJECT_JARFILE>${project.artifactId}.jar</PROJECT_JARFILE>
 								<PROJECT_MAIN_CLASS>${project.mainclass}</PROJECT_MAIN_CLASS>
@@ -1853,7 +1854,7 @@
 										<mkdir dir="${project.binaries}/linux" />
 										<mkdir dir="${project.binaries}/linux/x86" />
 										<mkdir dir="${project.binaries}/linux/x86/ffmpeg" />
-										<mkdir dir="${project.binaries}/linux/x86/jre${project.jre-version}" />
+										<mkdir dir="${project.binaries}/linux/x86/jdk${project.jdk-version}" />
 
 										<!-- Download binaries -->
 										<get src="${project.binaries-base}/linux/x86/ffmpeg/ffmpeg?p=${binary-revision}" dest="${project.binaries}/linux/x86/ffmpeg/ffmpeg" usetimestamp="true" />
@@ -1861,8 +1862,8 @@
 										<get src="${project.binaries-base}/linux/x86/tsMuxeR-new?p=${binary-revision}" dest="${project.binaries}/linux/x86/tsMuxeR-new" usetimestamp="true" />
 										<get src="${project.binaries-base}/linux/x86/tsMuxeR_licence.txt?p=${binary-revision}" dest="${project.binaries}/linux/x86/tsMuxeR_license.txt" usetimestamp="true" />
 										<get src="${project.binaries-base}/linux/youtube-dl?p=${binary-revision}" dest="${project.binaries}/linux/youtube-dl" usetimestamp="true" />
-										<get src="${project.binaries-base}/linux/x86/jre${project.jre-version}.tar.gz?p=${binary-revision}" dest="${project.binaries}/linux/x86/jre${project.jre-version}.tar.gz" usetimestamp="true" />
-										<untar src="${project.binaries}/linux/x86/jre${project.jre-version}.tar.gz" dest="${project.binaries}/linux/x86/jre${project.jre-version}" compression="gzip">
+										<get src="${project.binaries-base}/linux/x86/jdk${project.jdk-version}.tar.gz?p=${binary-revision}" dest="${project.binaries}/linux/x86/jre${project.jre-version}.tar.gz" usetimestamp="true" />
+										<untar src="${project.binaries}/linux/x86/jdk${project.jdk-version}.tar.gz" dest="${project.binaries}/linux/x86/jre${project.jre-version}" compression="gzip">
 											<cutdirsmapper dirs="1" />
 										</untar>
 									</target>
@@ -1996,7 +1997,7 @@
 										<mkdir dir="${project.binaries}/linux" />
 										<mkdir dir="${project.binaries}/linux/x86_64" />
 										<mkdir dir="${project.binaries}/linux/x86_64/ffmpeg" />
-										<mkdir dir="${project.binaries}/linux/x86_64/jre${project.jre-version}" />
+										<mkdir dir="${project.binaries}/linux/x86_64/jdk${project.jdk-version}" />
 
 										<!-- Download binaries -->
 										<get src="${project.binaries-base}/linux/x86_64/ffmpeg/ffmpeg?p=${binary-revision}" dest="${project.binaries}/linux/x86_64/ffmpeg/ffmpeg" usetimestamp="true" />
@@ -2004,8 +2005,8 @@
 										<get src="${project.binaries-base}/linux/x86_64/tsMuxeR-new?p=${binary-revision}" dest="${project.binaries}/linux/x86_64/tsMuxeR-new" usetimestamp="true" />
 										<get src="${project.binaries-base}/linux/x86_64/tsMuxeR_licence.txt?p=${binary-revision}" dest="${project.binaries}/linux/x86_64/tsMuxeR_license.txt" usetimestamp="true" />
 										<get src="${project.binaries-base}/linux/youtube-dl?p=${binary-revision}" dest="${project.binaries}/linux/youtube-dl" usetimestamp="true" />
-										<get src="${project.binaries-base}/linux/x86_64/jre${project.jre-version}.tar.gz?p=${binary-revision}" dest="${project.binaries}/linux/x86_64/jre${project.jre-version}.tar.gz" usetimestamp="true" />
-										<untar src="${project.binaries}/linux/x86_64/jre${project.jre-version}.tar.gz" dest="${project.binaries}/linux/x86_64/jre${project.jre-version}" compression="gzip">
+										<get src="${project.binaries-base}/linux/x86_64/jdk${project.jdk-version}.tar.gz?p=${binary-revision}" dest="${project.binaries}/linux/x86_64/jre${project.jre-version}.tar.gz" usetimestamp="true" />
+										<untar src="${project.binaries}/linux/x86_64/jdk${project.jdk-version}.tar.gz" dest="${project.binaries}/linux/x86_64/jre${project.jre-version}" compression="gzip">
 											<cutdirsmapper dirs="1" />
 										</untar>
 									</target>
@@ -2083,7 +2084,7 @@
 								<configuration>
 									<rules>
 										<requireJavaVersion>
-											<version>${project.jre-version}</version>
+											<version>${project.jdk-version}</version>
 										</requireJavaVersion>
 									</rules>
 								</configuration>
@@ -2174,7 +2175,7 @@
 											  failonerror="true"
 											  outputproperty="runtime">
 											<arg value="-v"/>
-											<arg value="${project.jre-version}"/>
+											<arg value="${project.jdk-version}"/>
 										</exec>
 
 										<!-- This appbundler version is 5946207 from https://github.com/TheInfiniteKind/appbundler -->
@@ -2196,7 +2197,7 @@
 										>
 											<!-- <runtime dir="${runtime}"/> -->
 											<!-- the following is needed because jrePreferred option doesn't work, see https://github.com/TheInfiniteKind/appbundler/issues/73 -->
-											<runtime dir="/Library/Java/JavaVirtualMachines/liberica-jre-${project.jre-version}.jre/Contents/Home"/>
+											<runtime dir="/Library/Java/JavaVirtualMachines/liberica-jdk-${project.jdk-version}.jre/Contents/Home"/>
 											<classpath file="${project.build.directory}/${project.build.finalName}-jar-with-dependencies.jar"/>
 											<option value="-Xmx2048M"/>
 											<option value="-Xss16M"/>
@@ -2313,7 +2314,7 @@
 								<configuration>
 									<rules>
 										<requireJavaVersion>
-											<version>${project.jre-version}</version>
+											<version>${project.jdk-version}</version>
 										</requireJavaVersion>
 									</rules>
 								</configuration>
@@ -2406,7 +2407,7 @@
 											  failonerror="true"
 											  outputproperty="runtime">
 											<arg value="-v"/>
-											<arg value="${project.jre-version}"/>
+											<arg value="${project.jdk-version}"/>
 										</exec>
 
 										<!-- This appbundler version is 5946207 from https://github.com/TheInfiniteKind/appbundler -->
@@ -2428,7 +2429,7 @@
 										>
 											<!-- <runtime dir="${runtime}"/> -->
 											<!-- the following is needed because jrePreferred option doesn't work, see https://github.com/TheInfiniteKind/appbundler/issues/73 -->
-											<runtime dir="/Library/Java/JavaVirtualMachines/liberica-jre-${project.jre-version}.jre/Contents/Home"/>
+											<runtime dir="/Library/Java/JavaVirtualMachines/liberica-jdk-${project.jdk-version}.jdk/Contents/Home"/>
 											<classpath file="${project.build.directory}/${project.build.finalName}-jar-with-dependencies.jar"/>
 											<option value="-Xmx2048M"/>
 											<option value="-Xss16M"/>
@@ -2545,7 +2546,7 @@
 								<configuration>
 									<rules>
 										<requireJavaVersion>
-											<version>${project.jre-version}</version>
+											<version>${project.jdk-version}</version>
 										</requireJavaVersion>
 									</rules>
 								</configuration>
@@ -2634,7 +2635,7 @@
 											  failonerror="true"
 											  outputproperty="runtime">
 											<arg value="-v"/>
-											<arg value="${project.jre-version}"/>
+											<arg value="${project.jdk-version}"/>
 										</exec>
 
 										<!-- This appbundler version is 12422ee from https://github.com/TheInfiniteKind/appbundler -->
@@ -2656,7 +2657,7 @@
 										>
 											<!-- <runtime dir="${runtime}"/> -->
 											<!-- the following is needed because jrePreferred option doesn't work, see https://github.com/TheInfiniteKind/appbundler/issues/73 -->
-											<runtime dir="/Library/Java/JavaVirtualMachines/liberica-jre-${project.jre-version}.jre/Contents/Home"/>
+											<runtime dir="/Library/Java/JavaVirtualMachines/liberica-jre-${project.jdk-version}.jre/Contents/Home"/>
 											<classpath file="${project.build.directory}/${project.build.finalName}-jar-with-dependencies.jar"/>
 											<option value="-Xmx2048M"/>
 											<option value="-Xss16M"/>

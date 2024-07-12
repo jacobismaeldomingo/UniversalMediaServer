@@ -26,6 +26,7 @@ import java.util.Map;
 import net.pms.PMS;
 import net.pms.configuration.UmsConfiguration;
 import net.pms.database.MediaTableVideoMetadataLocalized;
+import net.pms.database.VideoMetadataRequest;
 import net.pms.store.ThumbnailSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -575,7 +576,9 @@ public class TvSeriesMetadata {
 	public void ensureHavingTranslation(String lang) {
 		lang = CONFIGURATION.getTranslationLanguage(lang);
 		if (lang != null && !"en-us".equals(lang) && !hasTranslation(lang) && tvSeriesId != null && tvSeriesId > -1) {
-			VideoMetadataLocalized loc = MediaTableVideoMetadataLocalized.getVideoMetadataLocalized(tvSeriesId, true, lang, imdbID, "tv", tmdbId, null, null);
+			// Create a VideoMetadataRequest class to make a request with specified values
+			VideoMetadataRequest request = new VideoMetadataRequest(tvSeriesId, true, lang, imdbID, "tv", tmdbId, null, null);
+			VideoMetadataLocalized loc = MediaTableVideoMetadataLocalized.getVideoMetadataLocalized(request);
 			if (loc != null) {
 				addTranslation(lang, loc);
 			}

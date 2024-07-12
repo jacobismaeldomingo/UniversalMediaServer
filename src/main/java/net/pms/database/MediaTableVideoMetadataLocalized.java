@@ -199,15 +199,11 @@ public final class MediaTableVideoMetadataLocalized extends MediaTable {
 		try {
 			try (PreparedStatement ps = connection.prepareStatement(fromTvSeries ? SQL_GET_ALL_TVSERIESID : SQL_GET_ALL_FILEID)) {
 				ps.setLong(1, id);
-				try (ResultSet rs = ps.executeQuery()) {
-					while (rs.next()) {
+				try (ResultSet resultSet = ps.executeQuery()) {
+					while (resultSet.next()) {
 						VideoMetadataLocalized metadata = new VideoMetadataLocalized();
-						metadata.setHomepage(rs.getString(COL_HOMEPAGE));
-						metadata.setOverview(rs.getString(COL_OVERVIEW));
-						metadata.setPoster(rs.getString(COL_POSTER));
-						metadata.setTagline(rs.getString(COL_TAGLINE));
-						metadata.setTitle(rs.getString(COL_TITLE));
-						result.put(rs.getString(COL_LANGUAGE), metadata);
+						extractMetadataFromResultSet(resultSet);
+						result.put(resultSet.getString(COL_LANGUAGE), metadata);
 					}
 				}
 			}
@@ -218,19 +214,16 @@ public final class MediaTableVideoMetadataLocalized extends MediaTable {
 		return result;
 	}
 
-	public static VideoMetadataLocalized getVideoMetadataLocalized(
-		final Long id,
-		final boolean fromTvSeries,
-		final String language,
-		final String imdbId,
-		final String mediaType,
-		final Long tmdbId,
-		final Integer season,
-		final String episode
-	) {
+	/**
+	 * Retrieves localized video metadata using a VideoMetadataRequest object.
+	 *
+	 * @param request the VideoMetadataRequest object containing the parameters.
+	 * @return the localized video metadata.
+	 */
+	public static VideoMetadataLocalized getVideoMetadataLocalized(final VideoMetadataRequest request) {
 		try (Connection connection = MediaDatabase.getConnectionIfAvailable()) {
 			if (connection != null) {
-				return getVideoMetadataLocalized(connection, id, fromTvSeries, language, imdbId, mediaType, tmdbId, season, episode);
+				return getVideoMetadataLocalized(connection, request);
 			}
 		} catch (Exception e) {
 			LOGGER.error("Error while getting metadata for web interface");
@@ -239,67 +232,116 @@ public final class MediaTableVideoMetadataLocalized extends MediaTable {
 		return null;
 	}
 
-	public static VideoMetadataLocalized getVideoMetadataLocalized(
-		final Connection connection,
-		final Long id,
-		final boolean fromTvSeries,
-		final String language,
-		final String imdbId,
-		final String mediaType,
-		final Long tmdbId,
-		final Integer season,
-		final String episode
-	) {
-		if (connection == null || id == null || id < 0 || StringUtils.isBlank(language)) {
+	/**
+	 * Retrieves localized video metadata using a database connection and a VideoMetadataRequest object.
+	 *
+	 * @param connection the database connection.
+	 * @param request the VideoMetadataRequest object containing the parameters.
+	 * @return the localized video metadata.
+	 */
+	public static VideoMetadataLocalized getVideoMetadataLocalized(final Connection connection, final VideoMetadataRequest request) {
+		if (connection == null || request.getId() == null || request.getId() < 0 || StringUtils.isBlank(request.getLanguage())) {
 			return null;
 		}
-		try (PreparedStatement ps = connection.prepareStatement(fromTvSeries ? SQL_GET_ALL_LANGUAGE_TVSERIESID : SQL_GET_ALL_LANGUAGE_FILEID)) {
-			ps.setString(1, language);
-			ps.setLong(2, id);
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.first()) {
-					VideoMetadataLocalized result = new VideoMetadataLocalized();
-					result.setHomepage(rs.getString(COL_HOMEPAGE));
-					result.setOverview(rs.getString(COL_OVERVIEW));
-					result.setPoster(rs.getString(COL_POSTER));
-					result.setTagline(rs.getString(COL_TAGLINE));
-					result.setTitle(rs.getString(COL_TITLE));
-					return result;
+
+		try (PreparedStatement ps = createPreparedStatement(connection, request)) {
+			try (ResultSet resultSet = ps.executeQuery()) {
+				if (resultSet.first()) {
+					return extractMetadataFromResultSet(resultSet);
 				}
 			}
 		} catch (SQLException e) {
-			LOGGER.error("Database error in " + TABLE_NAME + " for \"{}\": {}", id, e.getMessage());
+			LOGGER.error("Database error in " + TABLE_NAME + " for \"{}\": {}", request.getId(), e.getMessage());
 			LOGGER.trace("", e);
 		}
-		//here we now we do not have the language in db, let search it.
-		LOGGER.trace("Looking for localized metadata for \"{}\": {}", mediaType, id);
-		VideoMetadataLocalized result = TMDB.getVideoMetadataLocalized(language, mediaType, imdbId, tmdbId, season, episode);
-		//remove not translated fields from base data
+
+		// If the metadata is not found in the database, fetch it from an external source (TMDB)
+		LOGGER.trace("Looking for localized metadata for \"{}\": {}", request.getMediaType(), request.getId());
+		VideoMetadataLocalized result = TMDB.getVideoMetadataLocalized(
+				request.getLanguage(), request.getMediaType(), request.getImdbId(), request.getTmdbId(), request.getSeason(), request.getEpisode()
+		);
+
+		// Clean the result by removing fields that are not translated
 		if (result != null) {
-			VideoMetadataLocalized baseData;
-			if (fromTvSeries) {
-				baseData = MediaTableTVSeries.getTvSeriesMetadataUnLocalized(connection, id);
-			} else {
-				baseData = MediaTableVideoMetadata.getVideoMetadataUnLocalized(connection, id);
-			}
-			if (baseData != null) {
-				if (result.getHomepage() != null && result.getHomepage().equals(baseData.getHomepage())) {
-					result.setHomepage(null);
-				}
-				if (result.getOverview() != null && result.getOverview().equals(baseData.getOverview())) {
-					result.setOverview(null);
-				}
-				if (result.getTagline() != null && result.getTagline().equals(baseData.getTagline())) {
-					result.setTagline(null);
-				}
-				if (result.getTitle() != null && result.getTitle().equals(baseData.getTitle())) {
-					result.setTitle(null);
-				}
-			}
+			VideoMetadataLocalized baseData = fetchBaseData(connection, request);
+			cleanTranslatedFields(result, baseData);
 		}
-		set(connection, id, fromTvSeries, result, language);
+
+		// Store the fetched metadata in the database for future use
+		set(connection, request.getId(), request.isFromTvSeries(), result, request.getLanguage());
 		return result;
 	}
+
+	/**
+	 * Creates a PreparedStatement for fetching localized video metadata.
+	 *
+	 * @param connection the database connection.
+	 * @param request the VideoMetadataRequest object containing the parameters.
+	 * @return the prepared statement.
+	 * @throws SQLException if an SQL error occurs.
+	 */
+	private static PreparedStatement createPreparedStatement(final Connection connection, final VideoMetadataRequest request) throws SQLException {
+		PreparedStatement ps = connection.prepareStatement(request.isFromTvSeries() ? SQL_GET_ALL_LANGUAGE_TVSERIESID : SQL_GET_ALL_LANGUAGE_FILEID);
+		ps.setString(1, request.getLanguage());
+		ps.setLong(2, request.getId());
+		return ps;
+	}
+
+	/**
+	 * Extracts video metadata from a ResultSet.
+	 *
+	 * @param resultSet the ResultSet.
+	 * @return the extracted video metadata.
+	 * @throws SQLException if an SQL error occurs.
+	 */
+	private static VideoMetadataLocalized extractMetadataFromResultSet(ResultSet resultSet) throws SQLException {
+		VideoMetadataLocalized result = new VideoMetadataLocalized();
+		result.setHomepage(resultSet.getString(COL_HOMEPAGE));
+		result.setOverview(resultSet.getString(COL_OVERVIEW));
+		result.setPoster(resultSet.getString(COL_POSTER));
+		result.setTagline(resultSet.getString(COL_TAGLINE));
+		result.setTitle(resultSet.getString(COL_TITLE));
+		return result;
+	}
+
+	/**
+	 * Fetches base data for the video or TV series from the database.
+	 *
+	 * @param connection the database connection.
+	 * @param request the VideoMetadataRequest object containing the parameters.
+	 * @return the base data.
+	 */
+	private static VideoMetadataLocalized fetchBaseData(final Connection connection, final VideoMetadataRequest request) {
+		if (request.isFromTvSeries()) {
+			return MediaTableTVSeries.getTvSeriesMetadataUnLocalized(connection, request.getId());
+		} else {
+			return MediaTableVideoMetadata.getVideoMetadataUnLocalized(connection, request.getId());
+		}
+	}
+
+	/**
+	 * Cleans the translated fields by removing those that are not different from the base data.
+	 *
+	 * @param result the localized video metadata.
+	 * @param baseData the base data.
+	 */
+	private static void cleanTranslatedFields(VideoMetadataLocalized result, VideoMetadataLocalized baseData) {
+		if (baseData != null) {
+			if (result.getHomepage() != null && result.getHomepage().equals(baseData.getHomepage())) {
+				result.setHomepage(null);
+			}
+			if (result.getOverview() != null && result.getOverview().equals(baseData.getOverview())) {
+				result.setOverview(null);
+			}
+			if (result.getTagline() != null && result.getTagline().equals(baseData.getTagline())) {
+				result.setTagline(null);
+			}
+			if (result.getTitle() != null && result.getTitle().equals(baseData.getTitle())) {
+				result.setTitle(null);
+			}
+		}
+	}
+
 
 	public static void clearVideoMetadataLocalized(final Connection connection, final Long id, final boolean fromTvSeries) {
 		if (connection == null || id == null || id < 0) {
