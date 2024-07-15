@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Linux specific platform code.
- * Only to be instantiated by {@link PlatformUtils#createInstance()}.
+ * Only to be instantiated by {@link PlatformUtils# createInstance()}.
  */
 public class LinuxUtils extends PlatformUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LinuxUtils.class);

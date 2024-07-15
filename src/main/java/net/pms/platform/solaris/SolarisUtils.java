@@ -20,7 +20,7 @@ import net.pms.platform.PlatformUtils;
 
 /**
  * Solaris specific platform code.
- * Only to be instantiated by {@link PlatformUtils#createInstance()}.
+ * Only to be instantiated by {@link PlatformUtils# createInstance()}.
  */
 public class SolarisUtils extends PlatformUtils {
 

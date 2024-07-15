@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Mac specific platform code.
- * Only to be instantiated by {@link PlatformUtils#createInstance()}.
+ * Only to be instantiated by {@link PlatformUtils# createInstance()}.
  */
 public class MacUtils extends PlatformUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MacUtils.class);

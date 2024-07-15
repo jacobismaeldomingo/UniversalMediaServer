@@ -17,7 +17,6 @@
 package net.pms.platform;
 
 import com.sun.jna.Platform;
-import com.sun.jna.platform.FileUtils;
 import com.vdurmont.semver4j.Semver;
 import java.awt.Desktop;
 import java.io.File;
@@ -29,15 +28,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import javax.annotation.concurrent.GuardedBy;
 import net.pms.PMS;
 import net.pms.io.IPipeProcess;
 import net.pms.io.OutputParams;
-import net.pms.platform.linux.LinuxPipeProcess;
 import net.pms.platform.linux.LinuxUtils;
 import net.pms.platform.mac.MacUtils;
 import net.pms.platform.posix.POSIXProcessTerminator;
@@ -55,15 +51,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base implementation for the {@link IPlatformUtils} class for the generic cases.
+ * Base implementation for the {@link PlatformUtils} class for the generic cases.
  * @author zsombor
  *
  */
-public class PlatformUtils implements IPlatformUtils {
+public class PlatformUtils implements PlatformFileOps, PlatformNetworkOps, PlatformSystemOps {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PlatformUtils.class);
 
-	/** *  The singleton platform dependent {@link IPlatformUtils} instance */
-	public static final IPlatformUtils INSTANCE = createInstance();
+	/** *  The singleton platform dependent {@link PlatformUtils} instance */
+	public static final PlatformUtils INSTANCE = createInstance();
 	protected static final Object IS_ADMIN_LOCK = new Object();
 	protected static final Object DEFAULT_FOLDERS_LOCK = new Object();
 
@@ -86,22 +82,22 @@ public class PlatformUtils implements IPlatformUtils {
 
 	@Override
 	public File getAvsPluginsDir() {
-		return null;
+		return INSTANCE.getAvsPluginsDir();
 	}
 
 	@Override
 	public File getKLiteFiltersDir() {
-		return null;
+		return INSTANCE.getKLiteFiltersDir();
 	}
 
 	@Override
 	public String getShortPathNameW(String longPathName) {
-		return longPathName;
+		return INSTANCE.getShortPathNameW(longPathName);
 	}
 
 	@Override
 	public String getDiskLabel(File f) {
-		return null;
+		return INSTANCE.getDiskLabel(f);
 	}
 
 	@Override
@@ -131,17 +127,17 @@ public class PlatformUtils implements IPlatformUtils {
 
 	@Override
 	public boolean isTsMuxeRCompatible() {
-		return true;
+		return INSTANCE.isTsMuxeRCompatible();
 	}
 
 	@Override
 	public String getiTunesFile() throws IOException, URISyntaxException {
-		return null;
+		return INSTANCE.getiTunesFile();
 	}
 
 	@Override
 	public Charset getDefaultCharset() {
-		return Charset.defaultCharset();
+		return INSTANCE.getDefaultCharset();
 	}
 
 	@Override
@@ -149,15 +145,12 @@ public class PlatformUtils implements IPlatformUtils {
 		try {
 			URI uri = new URI(url);
 			if (Platform.isLinux() && (Runtime.getRuntime().exec(new String[] {"which", "xdg-open"}).getInputStream().read() != -1)) {
-				// Workaround for Linux as Desktop.browse() doesn't work on some Linux
 				Runtime.getRuntime().exec(new String[] {"xdg-open", uri.toString()});
 				return true;
 			} else if (Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
 				Desktop.getDesktop().browse(uri);
 				return true;
 			} else if (Platform.isMac()) {
-				// On OS X, open the given URI with the "open" command.
-				// This will open HTTP URLs in the default browser.
 				Runtime.getRuntime().exec(new String[] {"open", uri.toString() });
 				return true;
 			} else {
@@ -171,7 +164,7 @@ public class PlatformUtils implements IPlatformUtils {
 
 	@Override
 	public boolean isNetworkInterfaceLoopback(NetworkInterface ni) throws SocketException {
-		return ni.isLoopback();
+		return INSTANCE.isNetworkInterfaceLoopback(ni);
 	}
 
 	/**
@@ -185,7 +178,7 @@ public class PlatformUtils implements IPlatformUtils {
 	 */
 	@Override
 	public byte[] getHardwareAddress(NetworkInterface ni) throws SocketException {
-		return ni.getHardwareAddress();
+		return INSTANCE.getHardwareAddress(ni);
 	}
 
 	/**
@@ -199,87 +192,57 @@ public class PlatformUtils implements IPlatformUtils {
 	 */
 	@Override
 	public String[] getPingCommand(String hostAddress, int count, int packetSize) {
-		return new String[] {"ping", /* count */"-c", Integer.toString(count), /* size */
-				"-s", Integer.toString(packetSize), hostAddress};
+		return INSTANCE.getPingCommand(hostAddress, count, packetSize);
 	}
 
 	@Override
 	public String parsePingLine(String line) {
-		int msPos = line.indexOf("ms");
-		String timeString = null;
-
-		if (msPos > -1) {
-			if (line.lastIndexOf('<', msPos) > -1) {
-				timeString = "0.5";
-			} else {
-				timeString = line.substring(line.lastIndexOf('=', msPos) + 1, msPos).trim();
-			}
-		}
-		return timeString;
+		return INSTANCE.parsePingLine(line);
 	}
 
 	@Override
 	public int getPingPacketFragments(int packetSize) {
-		return ((packetSize + 8) / 1500) + 1;
+		return INSTANCE.getPingPacketFragments(packetSize);
 	}
 
 	@Override
 	public String getTrayIcon() {
-		return "icon";
+		return INSTANCE.getTrayIcon();
 	}
 
 	@Override
 	public void moveToTrash(File file) throws IOException {
-		FileUtils.getInstance().moveToTrash(new File[]{file});
+		INSTANCE.moveToTrash(file);
 	}
 
 	@Override
 	public List<Path> getDefaultFolders() {
-		synchronized (DEFAULT_FOLDERS_LOCK) {
-			if (defaultFolders == null) {
-				// Lazy initialization
-				List<Path> result = new ArrayList<>();
-				result.add(Paths.get("").toAbsolutePath());
-				String userHome = System.getProperty("user.home");
-				if (StringUtils.isNotBlank(userHome)) {
-					result.add(Paths.get(userHome));
-				}
-				//TODO: (Nad) Implement xdg-user-dir for Linux when EnginesRegistration is merged:
-				// xdg-user-dir DESKTOP
-				// xdg-user-dir DOWNLOAD
-				// xdg-user-dir PUBLICSHARE
-				// xdg-user-dir MUSIC
-				// xdg-user-dir PICTURES
-				// xdg-user-dir VIDEOS
-				defaultFolders = Collections.unmodifiableList(result);
-			}
-			return defaultFolders;
-		}
+		return INSTANCE.getDefaultFolders();
 	}
 
 	@Override
 	public Version getFileVersionInfo(String filePath) {
-		return null;
+		return INSTANCE.getFileVersionInfo(filePath);
 	}
 
 	@Override
 	public boolean isAdmin() {
-		return false;
+		return INSTANCE.isAdmin();
 	}
 
 	@Override
 	public String getDefaultFontPath() {
-		return null;
+		return INSTANCE.getDefaultFontPath();
 	}
 
 	@Override
 	public boolean isPreventSleepSupported() {
-		return false;
+		return INSTANCE.isPreventSleepSupported();
 	}
 
 	@Override
 	public AbstractSleepWorker getSleepWorker(SleepManager owner, PreventSleepMode mode) {
-		throw new IllegalStateException("Missing SleepWorker implementation for current platform");
+		return INSTANCE.getSleepWorker(owner, mode);
 	}
 
 	@Override
@@ -294,32 +257,32 @@ public class PlatformUtils implements IPlatformUtils {
 
 	@Override
 	public IPipeProcess getPipeProcess(String pipeName, OutputParams params, String... extras) {
-		return new LinuxPipeProcess(pipeName, params, extras);
+		return INSTANCE.getPipeProcess(pipeName, params, extras);
 	}
 
 	@Override
 	public void appendErrorString(StringBuilder sb, int exitCode) {
-		sb.append("Process exited with code ").append(exitCode).append(":\n");
+		INSTANCE.appendErrorString(sb, exitCode);
 	}
 
 	@Override
 	public List<String> getRestartCommand(boolean hasOptions) {
-		return getUMSCommand();
+		return INSTANCE.getRestartCommand(hasOptions);
 	}
 
 	@Override
 	public String[] getShutdownCommand() {
-		return null;
+		return INSTANCE.getShutdownCommand();
 	}
 
 	@Override
 	public String getJvmExecutableName() {
-		return "java";
+		return INSTANCE.getJvmExecutableName();
 	}
 
 	@Override
 	public void destroyProcess(Process p) {
-		p.destroy();
+		INSTANCE.destroyProcess(p);
 	}
 
 	private static PlatformUtils createInstance() {

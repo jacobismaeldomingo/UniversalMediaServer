@@ -65,7 +65,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Windows specific platform code.
- * Only to be instantiated by {@link PlatformUtils#createInstance()}.
+ * Only to be instantiated by {@link PlatformUtils# createInstance()}.
  *
  * Contains the Windows specific native functionality.
  * Do not try to instantiate on Linux/Mac !
@@ -646,7 +646,7 @@ public class WindowsUtils extends PlatformUtils {
 	 * General tab.
 	 *
 	 * @return true if UMS could be installed as a Windows service.
-	 * @see net.pms.newgui.GeneralTab#build()
+	 * @see net.pms.newgui.GeneralTab# build()
 	 */
 	public static boolean installWin32Service() {
 		Path wrapper = PlatformProgramPaths.resolve("service/wrapper.exe");
